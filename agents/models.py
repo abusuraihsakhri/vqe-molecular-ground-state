@@ -6,7 +6,11 @@ Standard: CAP / CLSI / ISO Standards
 import datetime
 from enum import Enum
 from typing import Dict, Any, List, Optional
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
+
+# Safety bounds for metric values to prevent overflow/underflow
+METRIC_LOWER_BOUND = -1e6
+METRIC_UPPER_BOUND = 1e6
 
 
 class UrgencyLevel(str, Enum):
@@ -22,14 +26,27 @@ class SystemIntegrityStatus(str, Enum):
 
 
 class SystemTaskPayload(BaseModel):
-    task_id: str = Field(..., description="Unique task / case identifier")
-    target_identifier: str = Field(..., description="Entity, patient key, or genomic/cryptographic target")
+    task_id: str = Field(..., description="Unique task / case identifier", max_length=256)
+    target_identifier: str = Field(..., description="Entity, patient key, or genomic/cryptographic target", max_length=256)
     primary_metric: float = Field(..., description="Primary domain measurement or score")
     secondary_metric: float = Field(default=0.0, description="Secondary kinetic or confidence score")
-    status_descriptor: str = Field(default="NOMINAL", description="Status code or phenotype descriptor")
+    status_descriptor: str = Field(default="NOMINAL", description="Status code or phenotype descriptor", max_length=128)
     is_critical_flag: bool = Field(default=False, description="Emergency escalation or high priority trigger")
     attributes: Dict[str, Any] = Field(default_factory=dict, description="Metadata key-value pairs")
     timestamp: str = Field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc).isoformat())
+
+    @field_validator("primary_metric", "secondary_metric")
+    @classmethod
+    def validate_metric_bounds(cls, v: float) -> float:
+        if not isinstance(v, (int, float)):
+            raise ValueError(f"Metric must be numeric, got {type(v)}")
+        if v != v:  # NaN check
+            raise ValueError("Metric must not be NaN")
+        if v == float("inf") or v == float("-inf"):
+            raise ValueError("Metric must be finite")
+        if v < METRIC_LOWER_BOUND or v > METRIC_UPPER_BOUND:
+            raise ValueError(f"Metric {v} exceeds safety bounds [{METRIC_LOWER_BOUND}, {METRIC_UPPER_BOUND}]")
+        return float(v)
 
 
 class AgentAlert(BaseModel):

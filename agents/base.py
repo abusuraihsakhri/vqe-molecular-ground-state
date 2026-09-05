@@ -33,11 +33,19 @@ class ResourceLimitExceededException(Exception):
     pass
 
 
+MAX_PHI_SCAN_LENGTH = 10000  # Guard against ReDoS via excessively long inputs
+
+
 def assert_no_phi(text: str) -> None:
     if not text:
         return
+    text_str = str(text)
+    if len(text_str) > MAX_PHI_SCAN_LENGTH:
+        raise SecurityException(
+            f"PHI Outbound Guard Violation: Input exceeds maximum scan length ({MAX_PHI_SCAN_LENGTH} chars)"
+        )
     for pattern in PHI_PATTERNS:
-        if pattern.search(str(text)):
+        if pattern.search(text_str):
             raise SecurityException(f"PHI Outbound Guard Violation: Sensitive identifier detected with pattern {pattern.pattern}")
 
 
@@ -57,7 +65,17 @@ class PHIGuard:
 class AuditTrail:
     """Cryptographic Tamper-Evident HMAC-SHA256 Audit Trail."""
     def __init__(self, secret_key: Optional[str] = None):
-        self.secret_key = (secret_key or os.getenv("AUDIT_SECRET_KEY", "vqe-molecular-ground-state-master-audit-key-2026")).encode("utf-8")
+        resolved_key = secret_key or os.getenv("AUDIT_SECRET_KEY")
+        if not resolved_key:
+            import warnings
+            warnings.warn(
+                "AUDIT_SECRET_KEY not set; using development-only fallback. "
+                "Set AUDIT_SECRET_KEY in production for secure audit signing.",
+                RuntimeWarning,
+                stacklevel=2,
+            )
+            resolved_key = "DEV-ONLY-KEY-SET-AUDIT_SECRET_KEY-IN-ENV"
+        self.secret_key = resolved_key.encode("utf-8")
         self.logs: List[Dict[str, Any]] = []
 
     def log(self, actor: str, actor_tier: str, event_type: str, details: Dict[str, Any]) -> Dict[str, Any]:

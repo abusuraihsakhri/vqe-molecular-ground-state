@@ -1,7 +1,7 @@
 # VQE Molecular Ground State
 
-> **Domain:** Clinical Decision Support & Biomedical Computing  
-> **Reference Guidelines & Standards:** `Standard Clinical Formulations & ISO/IEC Quality Frameworks`
+> **Domain:** Clinical Decision Support & Biomedical Computing / Quantum Chemistry
+> **Standards:** CAP / CLSI / ISO Standards, VQE Quantum Chemistry Protocol
 
 <div align="center">
 
@@ -16,84 +16,163 @@
 
 ---
 
-## 📖 What It Does
+## Overview
 
-Vqe Molecular Ground State
+VQE Molecular Ground State is a dual-domain analytical platform combining:
 
----
-
-## ⚙️ Key Capabilities & Algorithmic Modules
-
-- **Deterministic Calculation Engine**: Strict compliance with standard reference formulations and thresholds.
-- **Risk & Urgency Classification**: Multi-tier categorization with automated clinical/operational action recommendations.
-- **Validation & Guardrails**: Rigorous input bounds checking and anomaly detection.
+1. **Clinical & Biomedical AI System** (`agents/`): Multi-worker evaluation engine with PHI outbound protection and cryptographic audit trails
+2. **Quantum Chemistry VQE Engine** (`vqe_ground_state/`): Variational Quantum Eigensolver ground state energy computation with Jordan-Wigner mapping and UCCSD ansatz optimization
 
 ---
 
-## 💻 CLI Quickstart & Usage
+## Installation
 
-### 1. Guided Interactive Mode
 ```bash
-python cli.py
+# Clone the repository
+git clone https://github.com/abusuraihsakhri/vqe-molecular-ground-state.git
+cd vqe-molecular-ground-state
+
+# Install dependencies
+pip install fastapi uvicorn pydantic pytest
+
+# For development
+pip install -e .
 ```
 
-### 2. Direct Parameterized Evaluation
+---
+
+## Configuration
+
+Set the audit secret key for production deployments:
+
 ```bash
-python cli.py --task-id <value> --target <value> --primary <value> --secondary <value>
+export AUDIT_SECRET_KEY="your-secure-random-key-here"
 ```
 
-### Parameter Reference
-- `--task-id`: Specifies input measurement or parameter value.
-- `--target`: Specifies input measurement or parameter value.
-- `--primary`: Specifies input measurement or parameter value.
-- `--secondary`: Specifies input measurement or parameter value.
-- `--critical`: Specifies input measurement or parameter value.
-- `--status`: Specifies input measurement or parameter value.
-- `--input`: Specifies input measurement or parameter value.
-- `--output`: Specifies input measurement or parameter value.
-
-### Input Data Schema
-
-| Field | Description | Requirement |
-|:------|:------------|:------------|
-| `task_id` | Parameter / observation metric | Required |
-| `target_identifier` | Parameter / observation metric | Required |
-| `primary_metric` | Parameter / observation metric | Required |
-| `secondary_metric` | Parameter / observation metric | Required |
-| `is_critical_flag` | Parameter / observation metric | Required |
-| `status_descriptor` | Parameter / observation metric | Required |
+> **Security Note:** Without `AUDIT_SECRET_KEY` set, the system uses a development-only fallback and emits a warning. Always set this in production.
 
 ---
 
-## 🛡️ Security & Enterprise Architecture
+## CLI Usage
 
-* **Zero-PHI Outbound Interceptor:** Active AST and regex inspection blocking SSNs, MRNs, phone numbers, and patient identifiers.
-* **Tamper-Evident HMAC-SHA256 Audit Trail:** Chained, cryptographically signed logs for every evaluation and state transition.
-* **Air-Gapped LLM Reasoning Adapter:** Agnostic integration for local Ollama instances (`llama3`, `mistral`), Claude 3.5 Sonnet, GPT-4o, and deterministic test mocks.
-* **Active Learning Bayesian Calibration:** Dynamic tracker updating worker reliability weights and monitoring Brier calibration drift.
-* **FastAPI & Prometheus Telemetry:** Exposes OpenAPI 3.1 REST endpoints and operational Prometheus metrics (`/metrics`).
+### 1. Single Task Evaluation (Audit)
+```bash
+python cli.py audit --task-id TASK-001 --target KEY-01 --primary 28.5 --secondary 14.2 --critical --status DISCORDANT
+```
+
+### 2. Supervisory Chat
+```bash
+python cli.py chat "What is the system status?"
+```
+
+### 3. Batch CSV Processing
+```bash
+python cli.py batch -i sample.csv -o results.csv
+```
+
+### 4. Verify Audit Trail
+```bash
+python cli.py verify-audit
+```
+
+### 5. Launch REST API Server
+```bash
+python cli.py serve --host 127.0.0.1 --port 8000
+```
+
+### Parameters
+| Argument | Description | Default |
+|:---------|:------------|:--------|
+| `--task-id` | Unique task identifier | `TASK-2026-001` |
+| `--target` | Target identifier | `KEY-TARGET-01` |
+| `--primary` | Primary metric (float) | `28.5` |
+| `--secondary` | Secondary metric (float) | `14.2` |
+| `--critical` | Critical flag | `False` |
+| `--status` | Status descriptor | `DISCORDANT` |
 
 ---
 
-## 🧪 Testing & Verification
+## REST API Endpoints
 
-Run the automated test suite:
+| Method | Endpoint | Description |
+|:-------|:---------|:------------|
+| GET | `/health` | Health check |
+| GET | `/metrics` | Prometheus metrics |
+| POST | `/api/audit` | Submit task for evaluation |
+| POST | `/api/chat` | Supervisory chat |
+| GET | `/api/audit/logs` | Audit trail with verification |
+
+---
+
+## Testing
 
 ```bash
+# Run full test suite
 pytest -v
-```
 
-Execute high-throughput batch simulation benchmarks:
+# Run with coverage
+pytest -v --cov=agents --cov=vqe_ground_state
 
-```bash
-python simulator.py --tasks 1000 --concurrency 8
+# Run simulation benchmark
+python simulator.py --tasks 1000
 ```
 
 ---
 
-## 🐳 Container Deployment
+## Security Features
+
+- **Zero-PHI Outbound Interceptor:** AST and regex inspection blocking SSNs, MRNs, phone numbers, emails, and patient identifiers
+- **HMAC-SHA256 Audit Trail:** Chained, cryptographically signed logs for every evaluation
+- **Input Validation:** Metric bounds checking, NaN/infinity rejection, length limits
+- **Path Traversal Protection:** File path validation for batch operations
+- **ReDoS Protection:** Maximum scan length for PHI regex patterns
+
+---
+
+## Architecture
+
+```
+vqe-molecular-ground-state/
+├── agents/                    # Clinical & Biomedical AI System
+│   ├── base.py               # Security, PHI Guard, Audit Trail
+│   ├── models.py             # Pydantic schemas with validation
+│   ├── supervisor.py         # Multi-worker orchestrator
+│   ├── workers.py            # Specialized evaluation workers
+│   ├── api.py                # FastAPI REST server
+│   ├── learning.py           # Bayesian calibration engine
+│   ├── metrics.py            # Prometheus metrics
+│   └── llm_factory.py        # LLM provider abstraction
+├── vqe_ground_state/         # Quantum Chemistry VQE Engine
+│   ├── models.py             # Frontier payload definitions
+│   ├── agents.py             # VQE sub-agents (Jordan-Wigner, UCCSD)
+│   ├── engine.py             # Core algorithmic engine
+│   ├── cli.py                # VQE-specific CLI
+│   └── server.py             # VQE FastAPI server
+├── tests/                    # Pytest test suite
+├── web/                      # Operations console (HTML)
+├── cli.py                    # Main CLI entry point
+├── simulator.py              # High-throughput simulation
+├── enrichment.py             # VQE enrichment feature modules
+├── Dockerfile                # Container build
+├── docker-compose.yml        # Container orchestration
+└── pyproject.toml            # Project metadata
+```
+
+---
+
+## Container Deployment
 
 ```bash
+# Build and run with Docker Compose
+AUDIT_SECRET_KEY="your-secure-key" docker-compose up --build
+
+# Or with Docker directly
 docker build -t vqe-molecular-ground-state .
-docker run -p 8000:8000 vqe-molecular-ground-state
+docker run -p 8000:8000 -e AUDIT_SECRET_KEY="your-secure-key" vqe-molecular-ground-state
 ```
+
+---
+
+## License
+
+MIT License - see [LICENSE](LICENSE) for details.
