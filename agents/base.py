@@ -71,7 +71,7 @@ class AuditTrail:
         if not resolved_key:
             import warnings
             warnings.warn(
-                "AUDIT_SECRET_KEY not set; using development-only fallback. "
+                "AUDIT_SECRET_KEY not set; using an ephemeral per-process key. "
                 "Set AUDIT_SECRET_KEY in production for secure audit signing.",
                 RuntimeWarning,
                 stacklevel=2,
@@ -89,7 +89,7 @@ class AuditTrail:
         audit_id = f"AUDIT-{int(time.time()*1000)}-{len(self.logs)+1}"
         ts = datetime.now(timezone.utc).isoformat()
         prev_hash = self.logs[-1]["current_hash"] if self.logs else "GENESIS_BLOCK_0000000000000000"
-        sign_string = f"{audit_id}|{ts}|{actor}|{actor_tier}|{event_type}|{payload_hash}|{prev_hash}"
+        sign_string = json.dumps([audit_id, ts, actor, actor_tier, event_type, payload_hash, prev_hash], separators=(",", ":"))
         signature = hmac.new(self.secret_key, sign_string.encode("utf-8"), hashlib.sha256).hexdigest()
         entry = {
             "audit_id": audit_id,
@@ -111,10 +111,10 @@ class AuditTrail:
             try:
                 if entry["prev_hash"] != previous:
                     return False
-                signed = "|".join(str(entry[field]) for field in (
+                signed = json.dumps([entry[field] for field in (
                     "audit_id", "timestamp", "actor", "actor_tier",
                     "event_type", "payload_hash", "prev_hash",
-                ))
+                )], separators=(",", ":"))
                 expected = hmac.new(self.secret_key, signed.encode("utf-8"), hashlib.sha256).hexdigest()
                 if not hmac.compare_digest(expected, entry["current_hash"]):
                     return False
