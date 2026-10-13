@@ -7,6 +7,7 @@ import json
 import sys
 from .models import FrontierPayload
 from .agents import VQECoordinator
+from .variational import solve_single_qubit
 
 coordinator = VQECoordinator()
 
@@ -14,6 +15,12 @@ coordinator = VQECoordinator()
 def main(argv=None):
     parser = argparse.ArgumentParser(prog="vqe-molecular-ground-state", description="VQE Variational Quantum Eigensolver Ground State Energy Agent")
     subparsers = parser.add_subparsers(dest="command", required=True)
+
+    # Educational one-qubit VQE (independent of the legacy alert simulator)
+    p_solve = subparsers.add_parser("solve", help="Minimize a one-qubit Pauli Hamiltonian")
+    p_solve.add_argument("--offset", type=float, default=-1.0, help="Coefficient of I")
+    p_solve.add_argument("--z", type=float, default=0.5, help="Coefficient of Z")
+    p_solve.add_argument("--x", type=float, default=0.25, help="Coefficient of X")
 
     # Audit
     p_audit = subparsers.add_parser("audit", help="Run single task evaluation")
@@ -39,6 +46,15 @@ def main(argv=None):
     p_serve.add_argument("--port", type=int, default=8000)
 
     args = parser.parse_args(argv)
+
+    if args.command == "solve":
+        try:
+            result = solve_single_qubit(args.offset, args.z, args.x)
+        except ValueError as exc:
+            print(f"Invalid Hamiltonian: {exc}", file=sys.stderr)
+            return 2
+        print(json.dumps(result.to_dict(), indent=2))
+        return 0
 
     if args.command == "audit":
         payload = FrontierPayload(
