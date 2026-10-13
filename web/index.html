@@ -1,236 +1,93 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vqe Molecular Ground State — Operations Console</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --bg: #090d16;
-            --card: #111827;
-            --border: #1f293d;
-            --accent: #3b82f6;
-            --accent-glow: rgba(59, 130, 246, 0.25);
-            --text: #f3f4f6;
-            --text-muted: #9ca3af;
-            --danger: #ef4444;
-            --warning: #f59e0b;
-            --success: #10b981;
-        }
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body {
-            font-family: 'Inter', sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            padding: 2rem;
-            min-height: 100vh;
-        }
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid var(--border);
-            padding-bottom: 1.5rem;
-            margin-bottom: 2rem;
-        }
-        .header-title h1 { font-size: 1.6rem; font-weight: 700; color: #fff; }
-        .header-title p { color: var(--text-muted); font-size: 0.9rem; margin-top: 0.25rem; }
-        .badge {
-            display: inline-block;
-            padding: 0.3rem 0.8rem;
-            border-radius: 9999px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            background: var(--accent-glow);
-            color: var(--accent);
-            border: 1px solid var(--accent);
-        }
-        .grid {
-            display: grid;
-            grid-template-columns: 1fr 1.2fr;
-            gap: 1.5rem;
-        }
-        .card {
-            background: var(--card);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 1.5rem;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
-        }
-        .card h2 {
-            font-size: 1.1rem;
-            font-weight: 600;
-            margin-bottom: 1rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        .form-group { margin-bottom: 1rem; }
-        label { display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.4rem; }
-        input, select, textarea {
-            width: 100%;
-            padding: 0.65rem 0.9rem;
-            background: #0d1322;
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            color: #fff;
-            font-family: inherit;
-            font-size: 0.9rem;
-        }
-        input:focus, textarea:focus { outline: none; border-color: var(--accent); }
-        .btn {
-            background: var(--accent);
-            color: #fff;
-            border: none;
-            padding: 0.7rem 1.4rem;
-            border-radius: 6px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: 0.2s;
-            width: 100%;
-        }
-        .btn:hover { background: #2563eb; }
-        .terminal {
-            background: #060911;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 1rem;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.85rem;
-            color: #10b981;
-            height: 380px;
-            overflow-y: auto;
-            white-space: pre-wrap;
-        }
-        .metrics-bar {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 1rem;
-            margin-bottom: 1.5rem;
-        }
-        .metric-box {
-            background: var(--card);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 1rem;
-            text-align: center;
-        }
-        .metric-val { font-size: 1.4rem; font-weight: 700; color: #fff; margin-top: 0.25rem; }
-        .metric-label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; }
-    </style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>VQE Ground State — Interactive Demonstration</title>
+  <style>
+    :root{font-family:system-ui,-apple-system,Segoe UI,sans-serif;color:#ecf3fb;background:#0b1220}
+    *{box-sizing:border-box}body{margin:0;line-height:1.55}
+    main{max-width:1050px;margin:auto;padding:2rem 1.2rem 4rem}
+    h1{font-size:clamp(1.5rem,4vw,2.25rem);margin:0}h2{font-size:1.2rem;margin:0 0 .85rem}
+    p{margin:.45rem 0 1.2rem;color:#c5d1e2}.subtle{color:#acbdd2;font-size:.88rem}
+    .heading{border-bottom:1px solid #34435b;padding-bottom:1.2rem;margin-bottom:1.4rem}
+    .grid{display:grid;grid-template-columns:minmax(240px,1fr) minmax(300px,1.2fr);gap:1.2rem}
+    .panel{background:#141f33;border:1px solid #354762;border-radius:12px;padding:1.3rem;margin-bottom:1.3rem}
+    label{display:block;font-size:.87rem;margin:.8rem 0 .3rem;color:#d4e1ef}
+    input{width:100%;padding:.67rem .72rem;border:1px solid #687d9b;border-radius:6px;background:#0b1426;color:white;font-size:1rem}
+    input[type=checkbox]{width:auto;margin-right:.5rem;accent-color:#70aafc}
+    input:focus-visible,button:focus-visible{outline:3px solid #eec86e;outline-offset:2px}
+    .checks{display:flex;align-items:center;gap:.3rem;margin:.9rem 0}
+    .checks label{margin:0}.inline{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.65rem}
+    button{border:0;background:#3579da;color:#fff;border-radius:7px;padding:.72rem 1.1rem;
+      font-size:1rem;font-weight:650;cursor:pointer;margin-top:1rem}
+    button:hover{background:#225cba}button:disabled{opacity:.5;cursor:wait}
+    .readout{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;white-space:pre-wrap;
+      word-break:break-word;border:1px solid #2f4662;border-radius:7px;
+      background:#0a1424;padding:1rem;min-height:10rem;font-size:.86rem;overflow:auto}
+    .notice{border-left:4px solid #f0c674;padding:.65rem .8rem;background:#232537;color:#f9e8c7}
+    .metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:.65rem;margin:.9rem 0 1.2rem}
+    .metric{padding:.7rem;background:#0b162a;border:1px solid #334662;border-radius:7px}
+    .metric b{display:block;font-size:1.08rem;font-variant-numeric:tabular-nums}
+    canvas{display:block;width:100%;height:auto;background:#0b1426;border:1px solid #374a63;border-radius:8px}
+    .legend{font-size:.8rem;color:#bdcbdb;margin:.45rem 0}
+    code{color:#c9e6ff}.small{font-size:.84rem}
+    @media(max-width:760px){.grid{grid-template-columns:1fr}.inline{grid-template-columns:1fr}
+      .metrics{grid-template-columns:1fr}main{padding:1rem}}
+    @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto}}
+  </style>
 </head>
-<body>
-
-    <div class="header">
-        <div class="header-title">
-            <h1>Vqe Molecular Ground State</h1>
-            <p>Domain: Clinical & Cryptographic AI | Standard: CAP / CLSI / NIST Standards | LabMind-Atlas Architecture</p>
-        </div>
-        <div>
-            <span class="badge">Air-Gapped Active</span>
-            <span class="badge" style="background: rgba(16,185,129,0.2); color: #10b981; border-color: #10b981;">Zero-PHI Guard Active</span>
-        </div>
+<body><main>
+<header class="heading">
+  <h1>Variational Quantum Eigensolver</h1>
+  <p>Interactive, dependency-free demonstration of variational minimization for a one-qubit Pauli Hamiltonian.</p>
+  <p class="notice">Educational model only. Coefficients are illustrative and are <strong>not</strong> computed from a molecule. The separate legacy threshold-audit interface below is not a clinical decision-support system.</p>
+</header>
+<section aria-labelledby="vqe-title" class="panel">
+  <h2 id="vqe-title">One-qubit ground-state energy</h2>
+  <p>Minimize the expectation of <code>H = a·I + b·Z + c·X</code> using <code>Ry(θ)|0⟩</code>. The solver uses a grid search and golden-section refinement. The exact 2×2 eigenvalue serves as a check.</p>
+  <div class="grid">
+    <form id="vqe-form">
+      <div class="inline">
+        <div><label for="offset">a (I coefficient)</label><input id="offset" type="number" value="-1" step="any" required></div>
+        <div><label for="z">b (Z coefficient)</label><input id="z" type="number" value="0.5" step="any" required></div>
+        <div><label for="x">c (X coefficient)</label><input id="x" type="number" value="0.25" step="any" required></div>
+      </div>
+      <button type="submit">Optimize energy</button>
+      <p class="subtle">Energy units follow the input coefficients (e.g., hartree if all inputs use hartree).</p>
+    </form>
+    <div>
+      <div class="metrics" aria-live="polite">
+        <div class="metric"><span>VQE minimum</span><b id="vqe-energy">—</b></div>
+        <div class="metric"><span>Exact minimum</span><b id="vqe-exact">—</b></div>
+        <div class="metric"><span>Absolute error</span><b id="vqe-error">—</b></div>
+      </div>
+      <canvas id="energy-plot" width="640" height="240" role="img" aria-label="Energy expectation versus rotation angle">Energy versus angle graph</canvas>
+      <p class="legend">Blue: variational energy E(θ) · Gold: computed minimum</p>
+      <p id="vqe-detail" class="small" aria-live="polite">Enter parameters and run the solver.</p>
     </div>
-
-    <div class="metrics-bar">
-        <div class="metric-box">
-            <div class="metric-label">System Status</div>
-            <div class="metric-val" style="color: var(--success);" id="m-status">OPTIMAL</div>
-        </div>
-        <div class="metric-box">
-            <div class="metric-label">Tasks Processed</div>
-            <div class="metric-val" id="m-tasks">142</div>
-        </div>
-        <div class="metric-box">
-            <div class="metric-label">Audit Blocks Signed</div>
-            <div class="metric-val" id="m-audit">142</div>
-        </div>
-        <div class="metric-box">
-            <div class="metric-label">PHI Interceptions</div>
-            <div class="metric-val" style="color: var(--accent);" id="m-phi">0</div>
-        </div>
+  </div>
+</section>
+<section aria-labelledby="audit-title" class="panel">
+  <h2 id="audit-title">Legacy three-worker threshold audit</h2>
+  <p>This preserves the existing rule-based audit workflow. When the Python server is reachable it returns signed audit results; on static hosting it runs an explicitly <strong>unsigned local simulation</strong>. Do not enter patient identifiers or other sensitive data.</p>
+  <div class="grid">
+    <form id="audit-form">
+      <label for="task_id">Task ID</label><input id="task_id" maxlength="256" value="TASK-DEMO-001" required>
+      <label for="target_id">Target identifier</label><input id="target_id" maxlength="256" value="TARGET-DEMO-01" required>
+      <label for="primary_metric">Primary metric</label><input id="primary_metric" type="number" value="29.4" step="any" required>
+      <label for="secondary_metric">Secondary metric</label><input id="secondary_metric" type="number" value="14.8" step="any" required>
+      <label for="status_descriptor">Status descriptor</label><input id="status_descriptor" maxlength="128" value="DISCORDANT_ANOMALY" required>
+      <div class="checks"><input id="is_critical" type="checkbox" checked><label for="is_critical">Critical flag</label></div>
+      <button id="audit-button" type="submit">Evaluate thresholds</button>
+    </form>
+    <div>
+      <p id="connection-label" class="subtle" role="status">Checking evaluation mode when needed.</p>
+      <pre id="audit-output" class="readout" aria-live="polite">No audit has been run in this session.</pre>
+      <p class="subtle">Tasks evaluated in this browser session: <strong id="audit-count">0</strong></p>
     </div>
-
-    <div class="grid">
-        <div class="card">
-            <h2>⚙️ Dispatch Distributed Component Audit</h2>
-            <div class="form-group">
-                <label>Task / Sample ID</label>
-                <input type="text" id="task_id" value="TASK-2026-LIVE-01">
-            </div>
-            <div class="form-group">
-                <label>Target Identifier</label>
-                <input type="text" id="target_id" value="SPECIMEN-ALPHA-77">
-            </div>
-            <div class="form-group">
-                <label>Primary Measurement / Value</label>
-                <input type="number" id="primary_metric" value="29.4" step="0.1">
-            </div>
-            <div class="form-group">
-                <label>Secondary Metric / Kinetic Index</label>
-                <input type="number" id="secondary_metric" value="14.8" step="0.1">
-            </div>
-            <div class="form-group">
-                <label>Status / Phenotype Descriptor</label>
-                <input type="text" id="status_descriptor" value="DISCORDANT_ANOMALY">
-            </div>
-            <div class="form-group">
-                <label><input type="checkbox" id="is_critical" checked> Trigger Emergency / Critical Flag</label>
-            </div>
-            <button class="btn" onclick="runAudit()">Execute Distributed Component Audit</button>
-        </div>
-
-        <div class="card">
-            <h2>📊 Real-Time Consensus Dossier & Audit Log</h2>
-            <div class="terminal" id="outputConsole">// Vqe Molecular Ground State Operations Console Ready
-// Connection established with Air-Gapped Supervisor
-// Cryptographic HMAC-SHA256 audit ledger loaded.
-// Ready for live task payload dispatch...</div>
-        </div>
-    </div>
-
-    <script>
-        async function runAudit() {
-            const consoleEl = document.getElementById('outputConsole');
-            consoleEl.innerText = "// Dispatching task across specialized workers...
-// Invoking InvariantQCWorker, SafetyEscalationWorker, ProtocolWorker...";
-
-            const payload = {
-                task_id: document.getElementById('task_id').value,
-                target_identifier: document.getElementById('target_id').value,
-                primary_metric: parseFloat(document.getElementById('primary_metric').value),
-                secondary_metric: parseFloat(document.getElementById('secondary_metric').value),
-                status_descriptor: document.getElementById('status_descriptor').value,
-                is_critical_flag: document.getElementById('is_critical').checked
-            };
-
-            try {
-                const res = await fetch('/api/audit', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-                const data = await res.json();
-                consoleEl.innerText = JSON.stringify(data, null, 2);
-                document.getElementById('m-tasks').innerText = parseInt(document.getElementById('m-tasks').innerText) + 1;
-                document.getElementById('m-audit').innerText = parseInt(document.getElementById('m-audit').innerText) + 1;
-            } catch (err) {
-                consoleEl.innerText = "// Offline / Simulation Output:\n" + JSON.stringify({
-                    dossier_id: "DOSSIER-SIM-" + Math.floor(Math.random()*10000),
-                    system: "vqe-molecular-ground-state",
-                    domain: "Clinical & Cryptographic AI",
-                    task_id: payload.task_id,
-                    overall_urgency: payload.is_critical_flag ? "CRITICAL_STAT_PANIC" : "ELEVATED_RISK",
-                    integrity_status: "DISCORDANT_ANOMALY",
-                    alerts: [
-                        { worker: "InvariantQCWorker", alert: "Primary metric exceeds upper reference bound" },
-                        { worker: "SafetyEscalationWorker", alert: "Critical emergency interlock flag active" }
-                    ],
-                    audit_hash: "HMAC_SHA256_e83f9a72b941d6c381f9"
-                }, null, 2);
-            }
-        }
-    </script>
-</body>
-</html>
+  </div>
+</section>
+<footer><p class="subtle">Calculations run locally in your browser. The backend audit path, when available, is a separate network request. This page does not upload quantum Hamiltonian coefficients.</p></footer>
+</main><script type="module" src="./app.mjs"></script></body></html>
