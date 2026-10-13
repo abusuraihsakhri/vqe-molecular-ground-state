@@ -8,7 +8,7 @@ import os
 import sys
 from agents.models import SystemTaskPayload
 from agents.supervisor import SystemSupervisor
-from agents.base import AuditLogger
+from agents.base import AuditLogger, SecurityException
 
 supervisor = SystemSupervisor(model_provider="mock")
 
@@ -19,9 +19,9 @@ def _validate_file_path(path: str, must_exist: bool = False) -> str:
     The CLI is run by a trusted local operator; it does not establish a
     filesystem sandbox. Never pass web-supplied paths to this function.
     """
-    if not path or "\\x00" in path:
+    if not path or chr(0) in path:
         raise ValueError(f"Invalid file path: {path}")
-    if ".." in path.replace("\\\\", "/").split("/"):
+    if ".." in path.replace(chr(92), "/").split("/"):
         raise ValueError(f"Invalid file path: {path}")
     normalized = os.path.normpath(path)
     if must_exist and not os.path.isfile(normalized):
@@ -133,7 +133,7 @@ def main(argv=None):
                 continue
             try:
                 dossier = supervisor.process_task(payload)
-            except (ValueError, TypeError) as e:
+            except (ValueError, TypeError, SecurityException) as e:
                 print(f"Skipping invalid row: {e}", file=sys.stderr)
                 continue
             row_dict = dict(r)
