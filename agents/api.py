@@ -1,16 +1,14 @@
 """
 FastAPI REST API Server for Vqe Molecular Ground State.
 """
-from typing import Dict, Any, List
 from pathlib import Path
-from dataclasses import asdict
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse, FileResponse
 from pydantic import Field
 from vqe_ground_state.variational import solve_single_qubit
 from pydantic import BaseModel
 from .base import AuditLogger, PHIGuard, SecurityException
-from .models import SystemTaskPayload, ConsensusDossier
+from .models import SystemTaskPayload
 from .supervisor import SystemSupervisor
 
 supervisor = SystemSupervisor(model_provider="mock")
