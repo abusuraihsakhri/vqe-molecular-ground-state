@@ -14,10 +14,16 @@ supervisor = SystemSupervisor(model_provider="mock")
 
 
 def _validate_file_path(path: str, must_exist: bool = False) -> str:
-    """Validate and sanitize a file path to prevent directory traversal."""
-    normalized = os.path.normpath(path)
-    if normalized.startswith("..") or normalized.startswith("/"):
+    """Validate a local CLI path, allowing absolute paths but no '..' segments.
+
+    The CLI is run by a trusted local operator; it does not establish a
+    filesystem sandbox. Never pass web-supplied paths to this function.
+    """
+    if not path or "\\x00" in path:
         raise ValueError(f"Invalid file path: {path}")
+    if ".." in path.replace("\\\\", "/").split("/"):
+        raise ValueError(f"Invalid file path: {path}")
+    normalized = os.path.normpath(path)
     if must_exist and not os.path.isfile(normalized):
         raise FileNotFoundError(f"Input file not found: {path}")
     return normalized
@@ -102,11 +108,15 @@ def main(argv=None):
                 reader = csv.DictReader(f)
                 fieldnames = list(reader.fieldnames or [])
                 rows = list(reader)
-        except (csv.Error, UnicodeDecodeError) as e:
+        except (csv.Error, UnicodeDecodeError, OSError) as e:
             print(f"Error reading input file: {e}", file=sys.stderr)
             return 1
 
-        out_fields = fieldnames + ["overall_urgency", "integrity_status", "total_alerts", "audit_hash"]
+        required_columns = {"task_id", "target_identifier", "primary_metric"}
+        if not required_columns.issubset(fieldnames):
+            print(f"Missing required CSV columns: {sorted(required_columns - set(fieldnames))}", file=sys.stderr)
+            return 1
+        out_fields = list(dict.fromkeys(fieldnames + ["overall_urgency", "integrity_status", "total_alerts", "audit_hash"]))
         out_rows = []
         for r in rows:
             try:
@@ -121,7 +131,11 @@ def main(argv=None):
             except (ValueError, TypeError) as e:
                 print(f"Skipping invalid row {r}: {e}", file=sys.stderr)
                 continue
-            dossier = supervisor.process_task(payload)
+            try:
+                dossier = supervisor.process_task(payload)
+            except (ValueError, TypeError) as e:
+                print(f"Skipping invalid row: {e}", file=sys.stderr)
+                continue
             row_dict = dict(r)
             row_dict["overall_urgency"] = dossier.overall_urgency.value
             row_dict["integrity_status"] = dossier.integrity_status.value
@@ -131,7 +145,7 @@ def main(argv=None):
 
         try:
             with open(output_path, mode="w", encoding="utf-8", newline="") as f:
-                writer = csv.DictWriter(f, fieldnames=out_fields)
+                writer = csv.DictWriter(f, fieldnames=out_fields, extrasaction="ignore")
                 writer.writeheader()
                 writer.writerows(out_rows)
         except OSError as e:
