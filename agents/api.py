@@ -2,8 +2,12 @@
 FastAPI REST API Server for Vqe Molecular Ground State.
 """
 from typing import Dict, Any, List
+from pathlib import Path
+from dataclasses import asdict
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, FileResponse
+from pydantic import Field
+from vqe_ground_state.variational import solve_single_qubit
 from pydantic import BaseModel
 from .base import AuditLogger, PHIGuard, SecurityException
 from .models import SystemTaskPayload, ConsensusDossier
@@ -21,6 +25,32 @@ app = FastAPI(
 @app.exception_handler(SecurityException)
 async def handle_phi_block(request: Request, exc: SecurityException):
     return JSONResponse(status_code=400, content={"detail": "Sensitive identifier or oversized field rejected"})
+
+
+class VQERequest(BaseModel):
+    offset: float = Field(default=-1.0, ge=-1e6, le=1e6, allow_inf_nan=False)
+    z: float = Field(default=0.5, ge=-1e6, le=1e6, allow_inf_nan=False)
+    x: float = Field(default=0.25, ge=-1e6, le=1e6, allow_inf_nan=False)
+
+
+@app.get("/", include_in_schema=False)
+def home():
+    return FileResponse(Path(__file__).resolve().parent.parent / "web" / "index.html")
+
+
+@app.get("/app.mjs", include_in_schema=False)
+def web_app():
+    return FileResponse(Path(__file__).resolve().parent.parent / "web" / "app.mjs", media_type="text/javascript")
+
+
+@app.get("/core.mjs", include_in_schema=False)
+def web_core():
+    return FileResponse(Path(__file__).resolve().parent.parent / "web" / "core.mjs", media_type="text/javascript")
+
+
+@app.post("/api/vqe")
+def api_vqe(req: VQERequest):
+    return solve_single_qubit(req.offset, req.z, req.x).to_dict()
 
 
 class ChatRequest(BaseModel):
